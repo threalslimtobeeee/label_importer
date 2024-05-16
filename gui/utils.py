@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- QFieldSync
+ QFieldSyncDialog
                                  A QGIS plugin
- Sync your projects to QField on android
+ Sync your projects to QField
                              -------------------
-        begin                : 2015-05-20
-        copyright            : (C) 2015 by OPENGIS.ch
-        email                : info@opengis.ch
+        begin                : 2020-06-15
         git sha              : $Format:%H$
+        copyright            : (C) 2020 by OPENGIS.ch
+        email                : info@opengis.ch
  ***************************************************************************/
 
 /***************************************************************************
@@ -19,32 +19,19 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
- This script initializes the plugin, making it known to QGIS.
 """
 
-from __future__ import absolute_import
 
-import os
-import pathlib
-import sys
+def set_available_actions(combobox, actions, default_action):
+    """Sets available actions on a checkbox and selects the current one.
 
-import qgis.utils
-
-src_dir = pathlib.Path(__file__).parent.resolve()
-
-libqfieldsync_whl = src_dir / "libqfieldsync.whl"
-if libqfieldsync_whl.exists():
-    sys.path.append(str(libqfieldsync_whl))
-
-
-# noinspection PyPep8Naming
-def classFactory(iface):  # pylint: disable=invalid-name
-    """Load QFieldSync class from file QFieldSync.
-
-    :param iface: A QGIS interface instance.
-    :type iface: QgsInterface
+    Args:
+        combobox (QComboBox): target combobox
+        layer_source (LayerSource): target layer
     """
+    for action, description in actions:
+        combobox.addItem(description)
+        combobox.setItemData(combobox.count() - 1, action)
 
-    from qfieldsync.qfield_sync import QFieldSync
-
-    return QFieldSync(iface)
+        if action == default_action:
+            combobox.setCurrentIndex(combobox.count() - 1)
