@@ -23,7 +23,7 @@
 """
 
 import os
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsMapLayer
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtWidgets import QApplication, QVBoxLayout, QWidget, QTreeWidget, QTreeWidgetItem
@@ -53,24 +53,41 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def setup_gui(self):
-        def set_up_combo_box(file_path):
-            self.refreshButton.setEnabled(True)
-            project = QgsProject()
-            project.read(file_path)
-            layers = project.mapLayers().values()
+        def set_up_combo_box():
+            self.LayerToCopyWidget.treeWidget.clear()
+            file_path = self.projectFile.filePath()
+            self.project = QgsProject()
+            self.project.read(file_path)
+            layers = self.project.mapLayers().values()
             for layer in layers:
-                self.LayerToCopyWidget.comboBox.addItem(layer.name())
-            i = 0
-            for layer in layers:
-                item = QTreeWidgetItem([layer.name()])
+                if layer.type() == QgsMapLayer.VectorLayer:
+                    if not layer.auxiliaryLayer() is None :
+                        item = QTreeWidgetItem([layer.name()])
                 #item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                #item.setCheckState(0, Qt.Unchecked)
-                self.LayerToCopyWidget.treeWidget.addTopLevelItem(item)
+                        self.LayerToCopyWidget.treeWidget.addTopLevelItem(item)
+        
+        def validate_inputs():
+            # Check if all required fields have values
+            #if self.line_edit1.text().strip() and self.line_edit2.text().strip():
+                self.button_box.setEnabled(True)
+            #else:
+            #    self.button_box.setEnabled(False)
+
+
+        def activate_refresh_button():
+            self.refreshButton.setEnabled(True)
+
+
+        self.button_box.setEnabled(False)
 
 
         
         self.advancedOptionsGroupBox.layout().addWidget(self.LayerToCopyWidget)
 
-        self.projectFile.fileChanged.connect(lambda file_path: set_up_combo_box(file_path))
-        self.refreshButton.clicked.connect(lambda file_path: set_up_combo_box(file_path))
+        self.projectFile.fileChanged.connect(activate_refresh_button)
+        self.projectFile.fileChanged.connect(validate_inputs)
+            
+            
+        self.refreshButton.clicked.connect(lambda file_path: set_up_combo_box())
         #self.advancedOptionsGroupBox.layout().addWidget(self.dirsToCopyWidget)
