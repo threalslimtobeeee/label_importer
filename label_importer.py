@@ -21,18 +21,20 @@
  *                                                                         *
  ***************************************************************************/
 """
+from qgis.core import Qgis
+from qgis.utils import iface
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-
+from label_importer.core.label_data_exporter import label_data_exporter
 from label_importer.gui.layers_to_copy_widget import LayerToCopyWidget
+from label_importer.gui.label_importer_dialog import DataDefinedLabelImporterDialog
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
-from .label_importer_dialog import DataDefinedLabelImporterDialog
-import os.path
 
+import os.path
 
 class DataDefinedLabelImporter:
     """QGIS Plugin Implementation."""
@@ -194,9 +196,38 @@ class DataDefinedLabelImporter:
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
-        result = self.dlg.exec_()
+       
         # See if OK was pressed
-        if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+
+        self.dlg.runButton.clicked.connect(self.on_run_button_clicked)
+
+        #result = self.dlg.exec_()
+        #if result:
+
+    def on_run_button_clicked(self):
+        
+        self.dlg.projectFile
+        print(123)
+        
+        project_file_path = self.dlg.projectFile.filePath()
+        source_layer      = self.dlg.LayerToCopyWidget.treeWidget.currentItem().data(0,1)
+        target_layer      = self.dlg.targetLayer.currentLayer() 
+
+        self.dlg.progressBar.setValue(20)
+        exporter = label_data_exporter(project_file_path, source_layer)
+
+        path = exporter.export_auxiliary_layer()
+        self.dlg.progressBar.setValue(40)
+
+        print(path)
+        self.iface.messageBar().pushMessage("Layer", str(path), level=Qgis.Info)
+        self.dlg.progressBar.setValue(100)
+        print(self.dlg.checkBox.checkState())
+        if self.dlg.checkBox.checkState() == 2:
+            print(1)
+            exporter.style_export()
+            
+       
+        # Do something useful here - delete the line containing pass and
+        # substitute with your code.
+        pass
