@@ -27,6 +27,7 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from label_importer.core.label_data_exporter import label_data_exporter
+from label_importer.core.label_data_importer import label_data_importer
 from label_importer.gui.layers_to_copy_widget import LayerToCopyWidget
 from label_importer.gui.label_importer_dialog import DataDefinedLabelImporterDialog
 
@@ -197,9 +198,12 @@ class DataDefinedLabelImporter:
         self.dlg.show()
         # Run the dialog event loop
        
-        # See if OK was pressed
+        self.run_button_connected = False
 
-        self.dlg.runButton.clicked.connect(self.on_run_button_clicked)
+        # See if OK was pressed
+        if not self.run_button_connected:
+            self.dlg.runButton.clicked.connect(self.on_run_button_clicked)
+            self.run_button_connected = True
 
         #result = self.dlg.exec_()
         #if result:
@@ -216,18 +220,23 @@ class DataDefinedLabelImporter:
         self.dlg.progressBar.setValue(20)
         exporter = label_data_exporter(project_file_path, source_layer)
 
-        path = exporter.export_auxiliary_layer()
+        sqlite_path, label_fields_table, output_layer_name  = exporter.export_auxiliary_layer()
         self.dlg.progressBar.setValue(40)
 
-        print(path)
-        self.iface.messageBar().pushMessage("Layer", str(path), level=Qgis.Info)
+        print(sqlite_path)
+        self.iface.messageBar().pushMessage("Layer", str(sqlite_path), level=Qgis.Info)
         self.dlg.progressBar.setValue(100)
         print(self.dlg.checkBox.checkState())
         if self.dlg.checkBox.checkState() == 2:
             print(1)
-            exporter.style_export()
+            qml_path = exporter.style_export()
+        else:
+            qml_path = None
             
-       
+        id_field     = self.dlg.targetIdField.currentField()
+        importer     = label_data_importer(target_layer, sqlite_path, label_fields_table, output_layer_name, qml_path )
+        importer.import_auxiliary_layer()
+    
         # Do something useful here - delete the line containing pass and
         # substitute with your code.
         pass
