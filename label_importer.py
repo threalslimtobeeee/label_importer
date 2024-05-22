@@ -215,7 +215,6 @@ class DataDefinedLabelImporter:
         
         project_file_path = self.dlg.projectFile.filePath()
         source_layer      = self.dlg.LayerToCopyWidget.treeWidget.currentItem().data(0,1)
-        target_layer      = self.dlg.targetLayer.currentLayer() 
 
         self.dlg.progressBar.setValue(20)
         exporter = label_data_exporter(project_file_path, source_layer)
@@ -226,15 +225,16 @@ class DataDefinedLabelImporter:
         print(sqlite_path)
         self.iface.messageBar().pushMessage("Layer", str(sqlite_path), level=Qgis.Info)
         self.dlg.progressBar.setValue(100)
-        print(self.dlg.checkBox.checkState())
         if self.dlg.checkBox.checkState() == 2:
             print(1)
             qml_path = exporter.style_export()
         else:
             qml_path = None
             
-        id_field     = self.dlg.targetIdField.currentField()
-        importer     = label_data_importer(target_layer, sqlite_path, label_fields_table, output_layer_name, qml_path )
+        id_field          = self.dlg.targetIdField.currentField()
+        target_layer      = self.dlg.targetLayer.currentLayer()
+
+        importer     = label_data_importer(target_layer, id_field, sqlite_path, label_fields_table, output_layer_name, qml_path )
         importer.import_auxiliary_layer()
     
         # Do something useful here - delete the line containing pass and

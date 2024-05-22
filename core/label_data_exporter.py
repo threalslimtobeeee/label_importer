@@ -19,23 +19,21 @@ class label_data_exporter:
         output_layer_name = 'aux_ly_' + self.export_id
         self.sqlite_path = os.path.join(self.temp_dir, self.export_id + '.gpkg')
 
+        # Export auxiliary layer to GeoPackage
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.fileEncoding = "UTF-8"
         options.driverName = "GPKG"
         options.layerName = output_layer_name
         options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer
+        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
         context = QgsProject.instance().transformContext()
-
-        if not os.path.exists(self.sqlite_path):
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-        else:
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
 
         QgsVectorFileWriter.writeAsVectorFormatV3(aux_layer, self.sqlite_path, context, options)
 
+        # Prepare the second table
         label_fields_table = 'aux_fi_' + self.export_id
         fields = [
-            QgsField('id', QVariant.Int), 
+            QgsField('id', QVariant.Int),
             QgsField('name', QVariant.String)
         ]
 
@@ -58,11 +56,16 @@ class label_data_exporter:
 
         temp_layer.commitChanges()
 
+        # Add the second table to the same GeoPackage
+        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
         options.layerName = label_fields_table
+        options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer
+
         QgsVectorFileWriter.writeAsVectorFormatV3(temp_layer, self.sqlite_path, context, options)
 
-        return self.sqlite_path, label_fields_table, output_layer_name 
+        return self.sqlite_path, label_fields_table, output_layer_name
 
+        
     def style_export(self):
         qml_file_path =  os.path.join(self.temp_dir, f"{self.export_id}.qml")
         self.layer.saveNamedStyle(qml_file_path, categories = QgsMapLayer.Symbology | QgsMapLayer.Labeling)
