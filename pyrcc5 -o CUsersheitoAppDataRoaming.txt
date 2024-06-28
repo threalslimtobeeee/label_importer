@@ -1,1 +1,0 @@
-pyrcc5 -o C:\Users\heito\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\label_importer\resources.py C:\Users\heito\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\label_importer\resources.qrc

@@ -32,7 +32,7 @@
       <widget class="QTreeWidget" name="treeWidget">
        <column>
         <property name="text">
-         <string notr="true">vector layers using auxiliary storage</string>
+         <string notr="true">Layers with auxiliary storage</string>
         </property>
        </column>
       </widget>

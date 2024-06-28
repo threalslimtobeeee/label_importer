@@ -27,7 +27,7 @@ from qgis.core import Qgis, QgsProject, QgsMapLayer
 from qgis.utils import iface
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets, Qt
-from qgis.PyQt.QtWidgets import  QVBoxLayout, QTreeWidgetItem
+from qgis.PyQt.QtWidgets import  QVBoxLayout, QTreeWidgetItem, QDialogButtonBox
 from qgis.gui import QgsMessageBar
 
 from label_importer.gui.layers_to_copy_widget import LayerToCopyWidget
@@ -49,36 +49,42 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.LayerToCopyWidget = LayerToCopyWidget()
         self.iface = iface
         self.setupUi(self)
-        self.setup_gui()
+        self.setupGui()
 
-    def setup_gui(self):
+    def setupGui(self):
         '''load the gui
         deactivate the ok-button
         poplulate the widget'''
-
-        self.update_fields()
-        self.deactivate_run_button()
+        self.ok_button = self.buttonBox.button(QDialogButtonBox.Ok)
+        self.updateFields()
+        self.deactivateOkButton()
         self.progressBar.setValue(0)
-        self.targetLayer.layerChanged.connect(self.update_fields)
-
+        self.targetLayer.layerChanged.connect(self.updateFields)
         group_box_layout = QVBoxLayout()
         self.sourceLayerBox.setLayout(group_box_layout)
         self.sourceLayerBox.layout().addWidget(self.LayerToCopyWidget)
         self.projectFile.setFilter("QGIS Project Files (*.qgz)")
-        self.projectFile.fileChanged.connect(lambda file_path: self.set_up_layer_box(file_path))
-        self.projectFile.fileChanged.connect(self.deactivate_run_button)
-        self.LayerToCopyWidget.treeWidget.currentItemChanged.connect(self.validate_inputs)
+        self.projectFile.fileChanged.connect(self.layerBoxUserMessage)
+        self.projectFile.fileChanged.connect(lambda file_path: self.setUpLayerBox(file_path))
+        self.projectFile.fileChanged.connect(self.deactivateOkButton)
+        self.LayerToCopyWidget.treeWidget.currentItemChanged.connect(self.validateInputs)
 
-    def deactivate_run_button(self):
+    def layerBoxUserMessage(self):
+        self.LayerToCopyWidget.treeWidget.addTopLevelItem(QTreeWidgetItem(["Loading layers... This process may take several seconds."]))
+
+    def deactivateOkButton(self):
         '''deactivate the button box to prevent the process from being executed'''
-        self.runButton.setEnabled(False)
+        self.ok_button.setEnabled(False)
 
-    def set_up_layer_box(self, file_path):
-        '''populate combobox with layers that have auxiliary storage'''
-        self.runButton.setEnabled(False)
-        self.LayerToCopyWidget.treeWidget.clear()
+    def setUpLayerBox(self, file_path):
+        '''populate combobox with layers that have auxiliary storage'''  
+        self.ok_button.setEnabled(False)
         self.project = QgsProject()
         self.project.read(file_path)
+
+        # delete user message
+        self.LayerToCopyWidget.treeWidget.clear()
+
         layers = self.project.mapLayers().values()
         for layer in layers:
             if layer.type() == QgsMapLayer.VectorLayer:
@@ -87,18 +93,14 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
                     item.setData(0, 1, layer.id() )
                     self.LayerToCopyWidget.treeWidget.addTopLevelItem(item)
 
-    def validate_inputs(self):
+    def validateInputs(self):
         ''' Check if all required fields have values'''
         #if self.projectFile.fileChanged:
-        self.runButton.setEnabled(True)
-        #iface.messageBar().pushMessage("Layer", self.LayerToCopyWidget.treeWidget.currentItem().text(0), level=Qgis.Info)
-        #iface.messageBar().pushMessage("Layer", self.LayerToCopyWidget.treeWidget.currentItem().data(0,1), level=Qgis.Info)
-        #iface.messageBar().pushMessage("Layer", self.LayerToCopyWidget.treeWidget.currentItem().data(0,1), level=Qgis.Info)
-        #else:
-        #    self.runButton.setEnabled(False)
+        self.ok_button.setEnabled(True)
 
-    def update_fields(self):
+    def updateFields(self):
         '''update layer fields when new layer is selected'''
+        print("update fields called")
         selected_layer = self.targetLayer.currentLayer()
         if selected_layer:
             self.targetIdField.setLayer(selected_layer)

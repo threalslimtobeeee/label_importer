@@ -4,7 +4,10 @@ import os
 from qgis.core import QgsProject, QgsVectorFileWriter, QgsVectorLayer, QgsField, QgsFeature, QgsMapLayer
 from PyQt5.QtCore import QVariant
 
-class label_data_exporter:
+class labelDataExporter:
+    """gets necessary information to 
+       save the label-placement-settings of
+        a vector layer to a temporary sqlite-database """
     def __init__(self, project_file_path, layer_id):
         self.project_file_path = project_file_path
         self.project = QgsProject()
@@ -13,7 +16,8 @@ class label_data_exporter:
         self.temp_dir = tempfile.gettempdir()
         self.export_id = str(uuid.uuid1()).replace('-', '')
 
-    def export_auxiliary_layer(self):
+    def exportAuxiliaryLayer(self):
+        """exports label-placement-settings to sqlite-database """
         aux_layer = self.layer.auxiliaryLayer()
         aux_layer.selectAll()
         output_layer_name = 'aux_ly_' + self.export_id
@@ -27,16 +31,14 @@ class label_data_exporter:
         options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer
         options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
         context = QgsProject.instance().transformContext()
-
         QgsVectorFileWriter.writeAsVectorFormatV3(aux_layer, self.sqlite_path, context, options)
-
+        
         # Prepare the second table
         label_fields_table = 'aux_fi_' + self.export_id
         fields = [
             QgsField('id', QVariant.Int),
             QgsField('name', QVariant.String)
         ]
-
         field_names = []
         for n, field in enumerate(aux_layer.fields()):
             field_pro_def = aux_layer.propertyDefinitionFromField(field)
@@ -60,13 +62,16 @@ class label_data_exporter:
         options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
         options.layerName = label_fields_table
         options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer
-
         QgsVectorFileWriter.writeAsVectorFormatV3(temp_layer, self.sqlite_path, context, options)
 
         return self.sqlite_path, label_fields_table, output_layer_name
 
         
-    def style_export(self):
+    def styleExport(self, symbology_y_n=False):
+        '''exports the layer style information either with or without symbology'''
         qml_file_path =  os.path.join(self.temp_dir, f"{self.export_id}.qml")
-        self.layer.saveNamedStyle(qml_file_path, categories = QgsMapLayer.Symbology | QgsMapLayer.Labeling)
-
+        if symbology_y_n:
+            self.layer.saveNamedStyle(qml_file_path, categories = QgsMapLayer.Symbology | QgsMapLayer.Labeling)
+        else:
+            self.layer.saveNamedStyle(qml_file_path, categories = QgsMapLayer.Labeling)
+        return qml_file_path

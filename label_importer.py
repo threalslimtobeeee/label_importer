@@ -21,14 +21,14 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.core import Qgis
+
 from qgis.utils import iface
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from label_importer.core.label_data_exporter import label_data_exporter
-from label_importer.core.label_data_importer import label_data_importer
-from label_importer.gui.layers_to_copy_widget import LayerToCopyWidget
+from PyQt5.QtWidgets import QMessageBox
+from label_importer.core.label_data_exporter  import labelDataExporter
+from label_importer.core.label_data_importer  import labelDataImporter
 from label_importer.gui.label_importer_dialog import DataDefinedLabelImporterDialog
 
 # Initialize Qt resources from file resources.py
@@ -67,10 +67,14 @@ class DataDefinedLabelImporter:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Auxiliary Labeldata Importer')
-
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+        self.run_button_connected = False
+        self.dlg = None
+        self.exporter = None  # Added to track exporter instance
+        self.importer = None  # Added to track importer instance
+        self.auxiliary_layer = None  # Track auxiliary layer to clean up if necessary
+
+ 
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -88,7 +92,7 @@ class DataDefinedLabelImporter:
         return QCoreApplication.translate('DataDefinedLabelImporter', message)
 
 
-    def add_action(
+    def addAction(
         self,
         icon_path,
         text,
@@ -150,7 +154,6 @@ class DataDefinedLabelImporter:
             action.setWhatsThis(whats_this)
 
         if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
             self.iface.addToolBarIcon(action)
 
         if add_to_menu:
@@ -166,7 +169,7 @@ class DataDefinedLabelImporter:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ':/plugins/label_importer/icon.png'
-        self.add_action(
+        self.addAction(
             icon_path,
             text=self.tr(u''),
             callback=self.run,
@@ -174,7 +177,6 @@ class DataDefinedLabelImporter:
 
         # will be set False in run()
         self.first_start = True
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -184,59 +186,68 @@ class DataDefinedLabelImporter:
                 action)
             self.iface.removeToolBarIcon(action)
 
+    def showConfirmationDialog(self):
+        """Shows a dialog if data will be overwritten"""
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle("Confirmation")
+        msg_box.setText("""This tool will delete the auxiliary layer of the selected targer layer and overwrite its label settings. Are you sure you want to proceed?""")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
 
+        result = msg_box.exec_()
+        if result == QMessageBox.Yes:
+            return True
+        else:
+            return False
+           
     def run(self):
         """Run method that performs all the real work"""
+        self.run_button_connected = ''
 
-        # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
+        if self.first_start:
             self.first_start = False
-            self.dlg = DataDefinedLabelImporterDialog()
-
-        # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-       
-        self.run_button_connected = False
-
-        # See if OK was pressed
-        if not self.run_button_connected:
-            self.dlg.runButton.clicked.connect(self.on_run_button_clicked)
-            self.run_button_connected = True
-
-        #result = self.dlg.exec_()
-        #if result:
-
-    def on_run_button_clicked(self):
-        
-        self.dlg.projectFile
-        print(123)
-        
-        project_file_path = self.dlg.projectFile.filePath()
-        source_layer      = self.dlg.LayerToCopyWidget.treeWidget.currentItem().data(0,1)
-
-        self.dlg.progressBar.setValue(20)
-        exporter = label_data_exporter(project_file_path, source_layer)
-
-        sqlite_path, label_fields_table, output_layer_name  = exporter.export_auxiliary_layer()
-        self.dlg.progressBar.setValue(40)
-
-        print(sqlite_path)
-        self.iface.messageBar().pushMessage("Layer", str(sqlite_path), level=Qgis.Info)
-        self.dlg.progressBar.setValue(100)
-        if self.dlg.checkBox.checkState() == 2:
-            print(1)
-            qml_path = exporter.style_export()
-        else:
-            qml_path = None
             
-        id_field          = self.dlg.targetIdField.currentField()
-        target_layer      = self.dlg.targetLayer.currentLayer()
+        self.dlg = DataDefinedLabelImporterDialog()
+        self.dlg.show()
+        self.dlg.buttonBox.accepted.connect(self.initiateProcess)
+        self.dlg.buttonBox.rejected.connect(lambda: self.dlg.close())
 
-        importer     = label_data_importer(target_layer, id_field, sqlite_path, label_fields_table, output_layer_name, qml_path )
-        importer.import_auxiliary_layer()
+    def initiateProcess(self):
+        """Call Confirmation Dialog if necessary"""
+        target_layer = self.dlg.targetLayer.currentLayer()
+        if target_layer.auxiliaryLayer():
+            if self.showConfirmationDialog():
+                self.runProcess(target_layer)
+        else:
+            self.runProcess(target_layer)
     
-        # Do something useful here - delete the line containing pass and
-        # substitute with your code.
-        pass
+    def runProcess(self, target_layer):
+        """Run Process
+            export auxiliary data and qml
+            import auxiliary data and qml"""
+        project_file_path = self.dlg.projectFile.filePath()
+        source_layer = self.dlg.LayerToCopyWidget.treeWidget.currentItem().data(0, 1)
+        self.dlg.progressBar.setValue(20)
+
+        # initiate exporter
+        exporter = labelDataExporter(project_file_path, source_layer)
+        sqlite_path, label_fields_table, output_layer_name = exporter.exportAuxiliaryLayer()
+        self.dlg.progressBar.setValue(40)
+        if self.dlg.checkBox.checkState() == 2:
+            qml_path = exporter.styleExport(True)
+        else:
+            qml_path = exporter.styleExport()
+        self.dlg.progressBar.setValue(80)
+        id_field = self.dlg.targetIdField.currentField()
+
+        # initiate importer
+        importer = labelDataImporter(target_layer, id_field, sqlite_path, label_fields_table, output_layer_name, qml_path)
+        importer.importAuxiliaryLayer()
+        target_layer.loadNamedStyle(qml_path)
+        # refresh the layer tree view and map canvas
+        target_layer.triggerRepaint()
+        iface.layerTreeView().refreshLayerSymbology(target_layer.id())
+        iface.mapCanvas().refresh()
+        self.dlg.progressBar.setValue(100)
+
