@@ -1,10 +1,11 @@
 import pandas as pd
+import sqlite3
 from qgis.core import (
     QgsProject, QgsDataSourceUri,
     QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, 
     QgsTextFormat, QgsVectorLayerUtils
 )
-import sqlite3
+
 
 class labelDataImporter:
     def __init__(self, layer, id_field, sqlite_path, label_fields_table, aux_data_layer_name, qml_file_path=None):

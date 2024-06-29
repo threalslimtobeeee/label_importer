@@ -23,12 +23,11 @@
 """
 
 import os
-from qgis.core import Qgis, QgsProject, QgsMapLayer
+from qgis.core import QgsProject, QgsMapLayer
 from qgis.utils import iface
 from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets, Qt
+from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtWidgets import  QVBoxLayout, QTreeWidgetItem, QDialogButtonBox
-from qgis.gui import QgsMessageBar
 
 from label_importer.gui.layers_to_copy_widget import LayerToCopyWidget
 
@@ -42,10 +41,6 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Constructor."""
         super(DataDefinedLabelImporterDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
-        # After self.setupUi() you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.LayerToCopyWidget = LayerToCopyWidget()
         self.iface = iface
         self.setupUi(self)
@@ -59,7 +54,6 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.updateFields()
         self.deactivateOkButton()
         self.progressBar.setValue(0)
-        self.targetLayer.layerChanged.connect(self.updateFields)
         group_box_layout = QVBoxLayout()
         self.sourceLayerBox.setLayout(group_box_layout)
         self.sourceLayerBox.layout().addWidget(self.LayerToCopyWidget)
@@ -68,6 +62,7 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.projectFile.fileChanged.connect(lambda file_path: self.setUpLayerBox(file_path))
         self.projectFile.fileChanged.connect(self.deactivateOkButton)
         self.LayerToCopyWidget.treeWidget.currentItemChanged.connect(self.validateInputs)
+        self.targetLayer.layerChanged.connect(self.updateFields)
 
     def layerBoxUserMessage(self):
         self.LayerToCopyWidget.treeWidget.addTopLevelItem(QTreeWidgetItem(["Loading layers... This process may take several seconds."]))
@@ -84,7 +79,6 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # delete user message
         self.LayerToCopyWidget.treeWidget.clear()
-
         layers = self.project.mapLayers().values()
         for layer in layers:
             if layer.type() == QgsMapLayer.VectorLayer:
@@ -100,7 +94,6 @@ class DataDefinedLabelImporterDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def updateFields(self):
         '''update layer fields when new layer is selected'''
-        print("update fields called")
         selected_layer = self.targetLayer.currentLayer()
         if selected_layer:
             self.targetIdField.setLayer(selected_layer)

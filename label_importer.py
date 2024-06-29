@@ -70,11 +70,9 @@ class DataDefinedLabelImporter:
         self.first_start = None
         self.run_button_connected = False
         self.dlg = None
-        self.exporter = None  # Added to track exporter instance
-        self.importer = None  # Added to track importer instance
-        self.auxiliary_layer = None  # Track auxiliary layer to clean up if necessary
-
- 
+        self.exporter = None
+        self.importer = None
+        self.auxiliary_layer = None  
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -185,6 +183,18 @@ class DataDefinedLabelImporter:
                 self.tr(u'&Auxiliary Labeldata Importer'),
                 action)
             self.iface.removeToolBarIcon(action)
+           
+    def run(self):
+        """Run method that performs all the real work"""
+        self.run_button_connected = ''
+
+        if self.first_start:
+            self.first_start = False
+            
+        self.dlg = DataDefinedLabelImporterDialog()
+        self.dlg.show()
+        self.dlg.buttonBox.accepted.connect(self.initiateProcess)
+        self.dlg.buttonBox.rejected.connect(lambda: self.dlg.close())
 
     def showConfirmationDialog(self):
         """Shows a dialog if data will be overwritten"""
@@ -200,18 +210,6 @@ class DataDefinedLabelImporter:
             return True
         else:
             return False
-           
-    def run(self):
-        """Run method that performs all the real work"""
-        self.run_button_connected = ''
-
-        if self.first_start:
-            self.first_start = False
-            
-        self.dlg = DataDefinedLabelImporterDialog()
-        self.dlg.show()
-        self.dlg.buttonBox.accepted.connect(self.initiateProcess)
-        self.dlg.buttonBox.rejected.connect(lambda: self.dlg.close())
 
     def initiateProcess(self):
         """Call Confirmation Dialog if necessary"""
@@ -226,6 +224,10 @@ class DataDefinedLabelImporter:
         """Run Process
             export auxiliary data and qml
             import auxiliary data and qml"""
+
+        # Store the current state of targetIdField
+        current_id_field = self.dlg.targetIdField.currentField()
+
         project_file_path = self.dlg.projectFile.filePath()
         source_layer = self.dlg.LayerToCopyWidget.treeWidget.currentItem().data(0, 1)
         self.dlg.progressBar.setValue(20)
@@ -245,9 +247,13 @@ class DataDefinedLabelImporter:
         importer = labelDataImporter(target_layer, id_field, sqlite_path, label_fields_table, output_layer_name, qml_path)
         importer.importAuxiliaryLayer()
         target_layer.loadNamedStyle(qml_path)
+
         # refresh the layer tree view and map canvas
         target_layer.triggerRepaint()
         iface.layerTreeView().refreshLayerSymbology(target_layer.id())
         iface.mapCanvas().refresh()
         self.dlg.progressBar.setValue(100)
+
+        # workaround to restore the state of targetIdField
+        self.dlg.targetIdField.setField(current_id_field)
 

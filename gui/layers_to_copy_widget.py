@@ -22,9 +22,7 @@
 """
 
 import os
-from pathlib import Path
-from typing import Dict, Optional
-
+from typing import Dict
 from qgis.PyQt.QtWidgets import  QWidget
 from qgis.PyQt.uic import loadUiType
 
