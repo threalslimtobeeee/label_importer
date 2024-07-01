@@ -8,8 +8,8 @@ email=heitob903@outlook.de
 
 about=This Plugin assists in importing label placement data from an auxiliary layer in another project. It focuses exclusively on label-related fields, disregarding non-label-related fields in the source project's auxiliary layer. Additionally, it operates independently without requiring any other plugins.
 
-tracker=https://github.com/threalslimtobeeee/Auxiliary-Labeldata-Importer/issues
-repository=https://github.com/threalslimtobeeee/Auxiliary-Labeldata-Importer
+tracker=https://github.com/threalslimtobeeee/label_importer/issues
+repository=https://github.com/threalslimtobeeee/label_importer
 # End of mandatory metadata
 
 # Recommended items:
@@ -21,7 +21,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=vector, labeling, export, import
 
-homepage=https://github.com/threalslimtobeeee/Auxiliary-Labeldata-Importer
+homepage=https://github.com/threalslimtobeeee/label_importer
 category=Plugins
 icon=icon.png
 # experimental flag
