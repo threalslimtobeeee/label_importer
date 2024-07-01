@@ -37,7 +37,6 @@ class labelDataImporter:
         conn = sqlite3.connect(self.sqlite_path)
         cursor = conn.cursor()
 
-        layer_settings = QgsPalLayerSettings()
         text_format = QgsTextFormat()
         label_settings = QgsPalLayerSettings()
         label_settings.setFormat(text_format)
