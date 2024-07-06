@@ -54,25 +54,33 @@ class labelDataImporter:
             if name:
                 aux_layer.createProperty(getattr(QgsPalLayerSettings, name), self.layer, True)
 
+        aux_layer_fields = aux_layer.fields()
         label_rows = cursor.execute(f"SELECT * FROM {self.aux_data_layer_name}")
         cols = [column[0] for column in label_rows.description]
         results = pd.DataFrame.from_records(data=label_rows.fetchall(), columns=cols)
+
+        def convert_value(value):
+            if pd.isnull(value):
+                return None
+            if isinstance(value, (int, float)):
+                return str(value)
+            return value
+
+        # Updated loop with convert_value function
         for index, row in results.iterrows():
             feature = QgsVectorLayerUtils.createFeature(aux_layer)
             for col in cols:
                 if col != 'fid':
-                    if col = 'ASPK':
-                        feature.setAttribute(col, str(row[col]))
-
                     try:
-                        feature.setAttribute(col, row[col])
+                        value = convert_value(row[col])
+                        feature.setAttribute(col, value)
                     except Exception as e:
                         print(f"Error setting attribute {col}: {e}")
             aux_layer.addFeature(feature)
 
-        aux_layer.commitChanges()
-        aux_layer.updateExtents()
-        aux_layer.save()
+            aux_layer.commitChanges()
+            aux_layer.updateExtents()
+            aux_layer.save()
 
         if aux_layer:
             QgsProject.instance().removeMapLayer(aux_layer.id())
