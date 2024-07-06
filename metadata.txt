@@ -2,7 +2,7 @@
 name=Auxiliary Labeldata Importer
 qgisMinimumVersion=3.28
 description=Helps you to import Labeldata, stored in an auxiliary Layer from another Project.
-version=0.1
+version=0.2
 author=Tobias
 email=heitob903@outlook.de
 
