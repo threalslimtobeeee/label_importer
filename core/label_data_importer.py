@@ -61,6 +61,9 @@ class labelDataImporter:
             feature = QgsVectorLayerUtils.createFeature(aux_layer)
             for col in cols:
                 if col != 'fid':
+                    if col = 'ASPK':
+                        feature.setAttribute(col, str(row[col]))
+
                     try:
                         feature.setAttribute(col, row[col])
                     except Exception as e:
