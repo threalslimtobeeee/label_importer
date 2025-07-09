@@ -1,5 +1,5 @@
-[!CAUTION]
-Still labeled experimetal, has some issues. Can overwrite your QGIS-Project
+
+**Still labeled experimetal, has some issues. Can overwrite your QGIS-Project**
 
 # Label importer
 
