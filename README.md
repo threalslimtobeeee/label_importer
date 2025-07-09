@@ -1,3 +1,6 @@
+[!CAUTION]
+Still labeled experimetal, has some issues. Can overwrite your QGIS-Project
+
 # Label importer
 
 This Plugin assists in importing label placement data from an auxiliary layer in another project. It focuses exclusively on label-related fields, disregarding non-label-related fields in the source project's auxiliary layer. Additionally, it operates independently without requiring any other plugins.
