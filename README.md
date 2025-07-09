@@ -1,5 +1,7 @@
 
 **Still labeled experimetal, has some issues. Can overwrite your QGIS-Project**
+> [!NOTE]  
+> Highlights information that users should take into account, even when skimming.
 
 # Label importer
 
